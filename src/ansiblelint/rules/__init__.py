@@ -422,7 +422,11 @@ class RulesCollection:
         # When we have a profile we unload some of the rules
         # But we do include all rules when listing all rules or tags
         if profile_name and not (self.options.list_rules or self.options.list_tags):
-            filter_rules_with_profile(self.rules, profile_name)
+            filter_rules_with_profile(
+                self.rules,
+                profile_name,
+                profile_override=self.options.override_profile,
+            )
 
     def register(self, obj: AnsibleLintRule, *, conditional: bool = False) -> None:
         """Register a rule."""
@@ -576,7 +580,12 @@ class RulesCollection:
         return result
 
 
-def filter_rules_with_profile(rule_col: list[BaseRule], profile: str) -> None:
+def filter_rules_with_profile(
+    rule_col: list[BaseRule],
+    profile: str,
+    *,
+    profile_override: bool = False,
+) -> None:
     """Unload rules that are not part of the specified profile."""
     included = set()
     extends = profile
@@ -586,14 +595,15 @@ def filter_rules_with_profile(rule_col: list[BaseRule], profile: str) -> None:
             _logger.debug("Activating rule `%s` due to profile `%s`", rule, extends)
             included.add(rule)
         extends = PROFILES[extends].get("extends", None)
-    for rule in rule_col.copy():
-        if rule.unloadable:
-            continue
-        if rule.id not in included:
-            _logger.debug(
-                "Unloading %s rule due to not being part of %s profile.",
-                rule.id,
-                profile,
-            )
-            rule_col.remove(rule)
+    if not profile_override:
+        for rule in rule_col.copy():
+            if rule.unloadable:
+                continue
+            if rule.id not in included:
+                _logger.debug(
+                    "Unloading %s rule due to not being part of %s profile.",
+                    rule.id,
+                    profile,
+                )
+                rule_col.remove(rule)
     _logger.debug("%s/%s rules included in the profile", len(rule_col), total_rules)

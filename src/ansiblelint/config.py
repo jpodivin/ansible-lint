@@ -177,6 +177,7 @@ class Options:  # pylint: disable=too-many-instance-attributes
     # Refer to https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html#ansible-core-support-matrix
     _default_supported = ["2.15.", "2.16.", "2.17."]
     supported_ansible_also: list[str] = field(default_factory=list)
+    override_profile: bool = False
 
     @property
     def nodeps(self) -> bool:
